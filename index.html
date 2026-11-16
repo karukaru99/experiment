@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ピッチ輪郭とアニマシー知覚に関する実験</title>
+<title>音の印象に関する実験</title>
 <style>
   :root{
     --ink:#1f2328;
@@ -340,6 +340,15 @@
     .likert-text{font-size:.9rem; text-align:left;}
     .likert-text .lk{display:inline;}
     .likert-col:has(input:checked){border-color:var(--accent);}
+    /* 並べ替え：スマホではドラッグできないので取っ手を隠し、項目名を1行に収める */
+    #app{padding:20px 12px 60px;}
+    .card{padding:24px 16px;}
+    ul.rank-list li{gap:8px; padding:10px 10px;}
+    ul.rank-list li .handle{display:none;}
+    /* 項目名は「・」の位置でだけ改行する（「道／具」のような切れ方をしない） */
+    ul.rank-list li .rank-text{min-width:0; word-break:keep-all; overflow-wrap:normal;}
+    .rank-ctrl{flex-shrink:0;}
+    .rank-ctrl button{padding:4px 8px;}
   }
   .q-block{
     padding-top:24px;
@@ -474,7 +483,8 @@ const RANK_PICK = 5; // Q3で順位づけする数（5 = 全選択肢を順位�
 /* 選択肢の表示：括弧内の例は表示せず、カテゴリ名のみを表示する */
 function rankLabelHtml(text){
   const i = text.indexOf("（");
-  return i === -1 ? text : text.slice(0,i);
+  const name = i === -1 ? text : text.slice(0,i);
+  return name.replace(/・/g, "・<wbr>"); // 狭い画面では「・」の後ろでだけ改行できるようにする
 } // Q3で選んで順位づけする数
 
 /* 各ラベルは [1行目, 2行目]。PCでは2行に分けて表示し、スマホでは1行で表示する */
@@ -634,7 +644,7 @@ function playAudio(src, opts){
    1試行終わるごとに、参加者ID・提示順・回答をブラウザ（localStorage）に保存する。
    途中でページが閉じても、同じ端末・同じブラウザで開き直せば続きから再開できる。
    保存できない環境（プライベートブラウズ等）では保存なしでそのまま動く。 */
-const STORAGE_KEY = "pitch_animacy_experiment_progress_v11"; // 刺激セットを変えたら番号を上げる
+const STORAGE_KEY = "sound_experiment_progress_v12"; // 刺激セットを変えたら番号を上げる
 function storageGet(){
   try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
   catch(e){ return null; }
@@ -794,7 +804,7 @@ function renderAgree(wrap){
     <p>正解・不正解はありませんので、感じたままにお答えください。全体の所要時間は約50〜60分です。</p>
     <p>回答いただいた内容は研究データとして使用します。個人を特定できる情報は集めず、結果は統計的にまとめて学会や論文などで発表します。</p>
     <p>実験は途中でいつでもやめることができます。中止することによって不利益を受けることは一切ありません。また、音を聞いて疲れや不快感を感じた場合は、無理をせず休憩をとるか、実験を中断してください。</p>
-    <p>今回はご自身の端末を使っていただくため、使用する機器や環境を完全に揃えることができません。できるだけ静かな場所で、ヘッドホンを着用してご参加いただけますようご協力をお願いします。</p>
+    <p>今回はご自身の端末を使っていただくため、使用する機器や環境を完全に揃えることができません。できるだけ静かな場所で、ヘッドホンを着用してご参加いただけますようご協力をお願いします。<br>また、スマートフォンでは十分な音量が出ない場合があるため、できるだけパソコンでご参加ください。</p>
     <label class="agree-box" id="agree-box">
       <input type="checkbox" id="agree-checkbox">
       <span>上記の内容を理解した上で、自発的に本実験に参加することに同意します。</span>
@@ -821,7 +831,7 @@ function renderConsent(wrap){
     <h1>実験を始める前に</h1>
     <p class="sub">所要時間：約50〜60分</p>
     <ol style="padding-left:1.3em; margin:20px 0;">
-      <li style="margin-bottom:12px;"><strong>ヘッドホンの着用</strong> — ヘッドホン（またはイヤホン）を着用し、静かな場所でご参加ください。</li>
+      <li style="margin-bottom:12px;"><strong>機器とヘッドホン</strong> — できるだけパソコンを使用し、ヘッドホン（またはイヤホン）を着用して、静かな場所でご参加ください。</li>
       <li style="margin-bottom:12px;"><strong>音量の調整</strong> — 次のページで音を再生しますので、聞き取りやすい音量に調整してください。実験が始まったら、音量は変えないでください。</li>
       <li style="margin-bottom:12px;"><strong>音声の再生</strong> — 各試行で再生ボタンを押すと音が流れます。何度でも聞き直して構いません。</li>
       <li style="margin-bottom:12px;"><strong>質問への回答</strong> — 音を聞いた後、その音について感じたことをお答えください。正解・不正解はありませんので、感じたままにお答えください。</li>
