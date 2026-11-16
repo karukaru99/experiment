@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ピッチ輪郭とアニマシー知覚に関する実験</title>
+<style>
+  :root{
+    --ink:#1f2328;
+    --sub:#5b6169;
+    --line:#d8dbdf;
+    --paper:#fafaf8;
+    --card:#ffffff;
+    --accent:#3a5a6b;
+    --accent-soft:#e8eef0;
+    --focus:#3a5a6b;
+    --danger:#a3432f;
+    --radius:10px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.75;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100%;
+    padding:0;
+  }
+  body.center-vertical{
+    min-height:100vh;
+  }
+  /* 縦中央寄せ：内容が画面より高い場合は上端から表示される（上が切れない） */
+  body.center-vertical #app{
+    margin-top:auto;
+    margin-bottom:auto;
+  }
+  #app{
+    width:100%;
+    max-width:960px;
+    padding:40px 24px 80px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:32px 28px;
+  }
+  h1{
+    font-size:1.4rem;
+    font-weight:700;
+    margin:0 0 8px;
+    letter-spacing:.01em;
+  }
+  h2{
+    font-size:1.05rem;
+    font-weight:700;
+    margin:0 0 18px;
+    color:var(--ink);
+  }
+  p{margin:0 0 14px;color:var(--ink);text-wrap:pretty;}
+  .sub{color:var(--sub); font-size:.92rem;}
+  .progress{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:.82rem;
+    color:var(--sub);
+    margin-bottom:18px;
+    letter-spacing:.02em;
+  }
+  .progress-bar{
+    height:4px;
+    background:var(--accent-soft);
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+  .progress-bar > div{
+    height:100%;
+    background:var(--accent);
+    transition:width .25s ease;
+  }
+  button{
+    font-family:inherit;
+    font-size:.98rem;
+    cursor:pointer;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:12px 20px;
+  }
+  button:focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:2px;
+  }
+  button:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+  .btn-primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    font-weight:600;
+  }
+  .btn-primary:hover:not(:disabled){background:#2f4a58;}
+  .btn-primary.is-locked{ opacity:.45; }
+  .btn-primary.is-locked:hover{ background:var(--accent); }
+  .btn-row{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:26px;
+  }
+  .play-zone{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    padding:36px 0 28px;
+  }
+  .play-btn{
+    width:88px;height:88px;
+    border-radius:50%;
+    background:var(--accent);
+    border:none;
+    color:#fff;
+    font-size:1.6rem;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .play-btn:disabled{background:#b9c3c8; box-shadow:none;}
+  .play-hint{font-size:.88rem;color:var(--sub);}
+  .replay-count{font-size:.8rem;color:var(--sub);}
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    margin:26px 0 8px;
+  }
+  .cal-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:22px 12px 18px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .cal-card.is-played{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  .cal-card .cal-label{
+    font-size:.86rem;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .cal-play-btn{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:var(--accent);
+    border:none;
+    color:#fff;
+    font-size:1.1rem;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 5px rgba(0,0,0,.13);
+    flex-shrink:0;
+  }
+  .cal-play-btn:hover{background:#2f4a58;}
+  .cal-status{
+    font-size:.76rem;
+    color:var(--accent);
+    min-height:1.1em;
+  }
+  .cal-check{
+    font-size:.82rem;
+    color:var(--sub);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:2px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .cal-check input[type="checkbox"]{
+    width:17px;height:17px;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+  .cal-check.checked{ color:var(--accent); font-weight:600; }
+  .cal-check-disabled{ opacity:.45; cursor:not-allowed; }
+  .cal-check-disabled input{ cursor:not-allowed; }
+  @media (max-width:520px){
+    .cal-grid{ grid-template-columns:1fr; }
+  }
+  textarea{
+    width:100%;
+    min-height:110px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-family:inherit;
+    font-size:.98rem;
+    resize:vertical;
+  }
+  textarea:focus-visible, textarea:focus{
+    outline:3px solid var(--focus);
+    outline-offset:1px;
+  }
+  ul.rank-list{
+    list-style:none;
+    margin:0 0 6px;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  ul.rank-list li{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:8px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:grab;
+    user-select:none;
+  }
+  ul.rank-list li.dragging{opacity:.4;}
+  ul.rank-list li .rank-num{
+    width:22px;height:22px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:.78rem;
+    font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  ul.rank-list li .handle{color:var(--sub); font-size:.9rem;}
+  ul.rank-list li .rank-text{flex:1;}
+  ul.rank-list li.rank-empty{
+    cursor:default;
+    border-style:dashed;
+    background:transparent;
+    color:var(--sub);
+    font-size:.88rem;
+    justify-content:center;
+  }
+  .rank-ctrl{display:flex; gap:4px; flex-shrink:0;}
+  .rank-ctrl button{
+    padding:4px 9px;
+    font-size:.78rem;
+    line-height:1.4;
+    color:var(--sub);
+  }
+  .rank-label{
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--sub);
+    margin:14px 0 8px;
+  }
+  .rank-pool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .pool-item{
+    padding:9px 14px;
+    font-size:.92rem;
+    text-align:left;
+  }
+  .pool-item:hover:not(:disabled){border-color:var(--accent); background:var(--accent-soft);}
+  .pool-item.is-selected{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+    color:var(--accent);
+    opacity:.6;
+  }
+  /* 7段階評定：各選択肢の下に番号とラベルを表示 */
+  .likert{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:6px;
+    margin-top:14px;
+  }
+  .likert-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    padding:10px 4px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .likert-col:hover{background:var(--accent-soft);}
+  .likert-col input{
+    width:22px;height:22px;
+    margin:0;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+  .likert-num{
+    font-size:.88rem;
+    font-weight:600;
+    color:var(--sub);
+    line-height:1;
+  }
+  .likert-text{
+    font-size:.78rem;
+    line-height:1.45;
+    color:var(--sub);
+    text-align:center;
+  }
+  .likert-text .lk{display:block; white-space:nowrap;}
+  .likert-col:has(input:checked){background:var(--accent-soft);}
+  .likert-col:has(input:checked) .likert-num,
+  .likert-col:has(input:checked) .likert-text{color:var(--accent); font-weight:700;}
+  /* 画面が狭いときは縦に並べ、ラベルを読みやすくする */
+  @media (max-width:640px){
+    .likert{grid-template-columns:1fr; gap:4px;}
+    .likert-col{
+      flex-direction:row;
+      gap:12px;
+      padding:9px 12px;
+      border:1px solid var(--line);
+    }
+    .likert-num{width:1.2em; text-align:center;}
+    .likert-text{font-size:.9rem; text-align:left;}
+    .likert-text .lk{display:inline;}
+    .likert-col:has(input:checked){border-color:var(--accent);}
+  }
+  .q-block{
+    padding-top:24px;
+    margin-top:24px;
+    border-top:1px solid var(--line);
+  }
+  .agree-box{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:26px 0 4px;
+    padding:16px 18px;
+    background:var(--accent-soft);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  .agree-box.checked{ border-color:var(--accent); }
+  .agree-box input[type="checkbox"]{
+    width:20px;height:20px;
+    accent-color:var(--accent);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .agree-box span{
+    font-size:.95rem;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .noise-screen{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+    padding:60px 0;
+    color:var(--sub);
+    font-size:.95rem;
+  }
+  .dot-pulse{
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--accent);
+    animation:pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1); opacity:1;}
+    50%{transform:scale(1.4); opacity:.5;}
+  }
+  .footer-note{
+    margin-top:18px;
+    font-size:.78rem;
+    color:var(--sub);
+    text-align:center;
+  }
+  .id-tag{
+    font-size:.75rem;
+    color:var(--sub);
+    margin-bottom:10px;
+  }
+  .req-mark{color:var(--danger); font-size:.85em;}
+  .warn{
+    font-size:.85rem;
+    color:var(--danger);
+    margin-top:8px;
+    min-height:1.2em;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .dot-pulse{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+
+/* ========== 1. 刺激定義 ========== */
+/* 27刺激 = 3帯域 × 9輪郭サブタイプ（1021版音源・irregularを除いたもの）
+   band: 周波数帯域 / contour: 輪郭の種類 / subtype: 輪郭サブタイプ（9種）
+   steady_mid = 帯域の中央（幾何平均）の高さで一定
+   irregular2 = 転換の時刻と高さに加えて、始点・終点の高さもランダム
+   （stimuli_log.csv の condition 列と同じ名前） */
+const STIMULI = [
+  {file:"100-200_steady_mid.wav",                            band:"100-200",   contour:"steady",      subtype:"steady_mid",          label_jp:"定常（中央）"},
+  {file:"300-600_steady_mid.wav",                            band:"300-600",   contour:"steady",      subtype:"steady_mid",          label_jp:"定常（中央）"},
+  {file:"900-1800_steady_mid.wav",                           band:"900-1800",  contour:"steady",      subtype:"steady_mid",          label_jp:"定常（中央）"},
+  {file:"100-200_linear_up.wav",                             band:"100-200",   contour:"linear",      subtype:"linear_up",           label_jp:"線形上昇"},
+  {file:"300-600_linear_up.wav",                             band:"300-600",   contour:"linear",      subtype:"linear_up",           label_jp:"線形上昇"},
+  {file:"900-1800_linear_up.wav",                            band:"900-1800",  contour:"linear",      subtype:"linear_up",           label_jp:"線形上昇"},
+  {file:"100-200_linear_down.wav",                           band:"100-200",   contour:"linear",      subtype:"linear_down",         label_jp:"線形下降"},
+  {file:"300-600_linear_down.wav",                           band:"300-600",   contour:"linear",      subtype:"linear_down",         label_jp:"線形下降"},
+  {file:"900-1800_linear_down.wav",                          band:"900-1800",  contour:"linear",      subtype:"linear_down",         label_jp:"線形下降"},
+  {file:"100-200_arch_peak_smooth.wav",                      band:"100-200",   contour:"arch",        subtype:"peak",                label_jp:"山型"},
+  {file:"300-600_arch_peak_smooth.wav",                      band:"300-600",   contour:"arch",        subtype:"peak",                label_jp:"山型"},
+  {file:"900-1800_arch_peak_smooth.wav",                     band:"900-1800",  contour:"arch",        subtype:"peak",                label_jp:"山型"},
+  {file:"100-200_arch_valley_smooth.wav",                    band:"100-200",   contour:"arch",        subtype:"valley",              label_jp:"谷型"},
+  {file:"300-600_arch_valley_smooth.wav",                    band:"300-600",   contour:"arch",        subtype:"valley",              label_jp:"谷型"},
+  {file:"900-1800_arch_valley_smooth.wav",                   band:"900-1800",  contour:"arch",        subtype:"valley",              label_jp:"谷型"},
+  {file:"100-200_regular_2Hz_smooth.wav",                    band:"100-200",   contour:"regular",     subtype:"regular_3turns",      label_jp:"規則的振動（転換3回）"},
+  {file:"300-600_regular_2Hz_smooth.wav",                    band:"300-600",   contour:"regular",     subtype:"regular_3turns",      label_jp:"規則的振動（転換3回）"},
+  {file:"900-1800_regular_2Hz_smooth.wav",                   band:"900-1800",  contour:"regular",     subtype:"regular_3turns",      label_jp:"規則的振動（転換3回）"},
+  {file:"100-200_regular_4Hz_smooth.wav",                    band:"100-200",   contour:"regular",     subtype:"regular_7turns",      label_jp:"規則的振動（転換7回）"},
+  {file:"300-600_regular_4Hz_smooth.wav",                    band:"300-600",   contour:"regular",     subtype:"regular_7turns",      label_jp:"規則的振動（転換7回）"},
+  {file:"900-1800_regular_4Hz_smooth.wav",                   band:"900-1800",  contour:"regular",     subtype:"regular_7turns",      label_jp:"規則的振動（転換7回）"},
+  {file:"100-200_irregular2_3turns_seed143_smooth.wav",      band:"100-200",   contour:"irregular2",  subtype:"irregular2_3turns",   label_jp:"不規則変動2・始終点もランダム（転換3回）"},
+  {file:"300-600_irregular2_3turns_seed119_smooth.wav",      band:"300-600",   contour:"irregular2",  subtype:"irregular2_3turns",   label_jp:"不規則変動2・始終点もランダム（転換3回）"},
+  {file:"900-1800_irregular2_3turns_seed210_smooth.wav",     band:"900-1800",  contour:"irregular2",  subtype:"irregular2_3turns",   label_jp:"不規則変動2・始終点もランダム（転換3回）"},
+  {file:"100-200_irregular2_7turns_seed188_smooth.wav",      band:"100-200",   contour:"irregular2",  subtype:"irregular2_7turns",   label_jp:"不規則変動2・始終点もランダム（転換7回）"},
+  {file:"300-600_irregular2_7turns_seed16_smooth.wav",       band:"300-600",   contour:"irregular2",  subtype:"irregular2_7turns",   label_jp:"不規則変動2・始終点もランダム（転換7回）"},
+  {file:"900-1800_irregular2_7turns_seed262_smooth.wav",     band:"900-1800",  contour:"irregular2",  subtype:"irregular2_7turns",   label_jp:"不規則変動2・始終点もランダム（転換7回）"},
+];
+const PINK_NOISE = "pink_noise_1s_-3dB.wav"; // 元の pink_noise_1s_+0dB.wav を振幅0.7倍（約-3.1dB）にしたもの
+const CALIBRATION_TONES = [
+  {file:"calibration_150hz.wav", label:"サンプル 1"},
+  {file:"calibration_450hz.wav", label:"サンプル 2"},
+  {file:"calibration_1200hz.wav", label:"サンプル 3"},
+];
+const AUDIO_DIR = "audio/";
+const NOISE_VOLUME = 1.0; // 音量はファイル側で調整済み（iPhone等ではブラウザの音量指定が効かないため）
+const BREAK_AFTER_TRIALS = []; // 休憩なし。休憩を入れる場合は、終えた直後に休憩を挟む試行数を書く（例：[10, 20]）
+
+const RANK_ITEMS = [
+  {id:"living",    text:"生き物（人の声、動物の鳴き声など）"},
+  {id:"machine",   text:"機械・電子機器（エンジン、モーター、電子音など）"},
+  {id:"instrument",text:"楽器（笛、バイオリン、ピアノなど）"},
+  {id:"object",    text:"物体・道具（物がぶつかる・こすれる・転がる音など）"},
+  {id:"nature",    text:"自然現象（風、水、雷など）"},
+];
+const RANK_PICK = 5; // Q3で順位づけする数（5 = 全選択肢を順位づけ）
+/* 選択肢の表示：括弧内の例は表示せず、カテゴリ名のみを表示する */
+function rankLabelHtml(text){
+  const i = text.indexOf("（");
+  return i === -1 ? text : text.slice(0,i);
+} // Q3で選んで順位づけする数
+
+/* 各ラベルは [1行目, 2行目]。PCでは2行に分けて表示し、スマホでは1行で表示する */
+const LIKERT_LABELS = [
+  ["全くそう", "感じない"],
+  ["そう", "感じない"],
+  ["あまりそう", "感じない"],
+  ["どちらとも", "いえない"],
+  ["ややそう", "感じる"],
+  ["そう", "感じる"],
+  ["非常にそう", "感じる"],
+];
+/* 7段階評定（Q3〜Q7）。配列の順番 = 画面に出る順番 = CSVの列名（q3〜q7）。
+   Q8（並べ替え）はその後に表示し、CSVでは q8_rank_order と rank_* の列に記録する */
+const LIKERT_QUESTIONS = [
+  {key:"q3", text:"この音は、ほかの何かによって出させられているのではなく、音を出しているもの自身が出しているように感じましたか。"},
+  {key:"q4", text:"この音を出しているものは、何らかの目的をもって音を出しているように感じましたか。"},
+  {key:"q5", text:"この音を出しているものは、周囲で何か変化が起きたとき、それに反応しそうだと感じましたか。"},
+  {key:"q6", text:"この音は、何かの声や鳴き声のように感じましたか。"},
+  {key:"q7", text:"この音を出しているものは、生き物であるように感じましたか。"},
+];
+const RANK_DISPLAY_NO = 3 + LIKERT_QUESTIONS.length; // 並べ替え（Q8）は最後に表示する
+
+/* ========== 2. ランダム順序生成（隣接する帯域・サブタイプの重複を禁止） ========== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function isValidOrder(order){
+  for(let i=1;i<order.length;i++){
+    if(order[i].band === order[i-1].band) return false;
+    if(order[i].subtype === order[i-1].subtype) return false;
+  }
+  return true;
+}
+const BACKTRACK_BUDGET = 2000; // 1回の探索で試す手数の上限。超えたら最初からランダムにやり直す
+function backtrackOrder(remaining, chosen, budget){
+  if(remaining.length === 0) return chosen;
+  if(budget.left-- <= 0) return null; // 手数切れ -> この探索を打ち切る
+  const last = chosen[chosen.length-1];
+  // 直前の刺激と帯域・サブタイプが重複しない候補だけをランダム順で試す
+  const candidates = shuffle(remaining.filter(it => !last || (it.band!==last.band && it.subtype!==last.subtype)));
+  for(const cand of candidates){
+    const newRemaining = remaining.filter(it => it!==cand);
+    const result = backtrackOrder(newRemaining, chosen.concat([cand]), budget);
+    if(result) return result;
+    if(budget.left <= 0) return null;
+  }
+  return null; // この枝では解けない -> 呼び出し元でバックトラック
+}
+function generateOrder(){
+  // ランダム化されたバックトラック探索で、隣接する帯域・サブタイプが重複しない順序を作る。
+  // まれに探索が袋小路に入り長時間かかることがあるため、手数の上限を超えたら
+  // 最初から別のランダム順でやり直す（ランダムリスタート）。
+  for(let attempt=0; attempt<1000; attempt++){
+    const order = backtrackOrder(shuffle(STIMULI), [], {left: BACKTRACK_BUDGET});
+    if(order && isValidOrder(order)) return order;
+  }
+  return shuffle(STIMULI); // 理論上到達しないはずのフォールバック
+}
+
+/* ========== 3. 状態管理 ========== */
+let participantId = "P" + Date.now();
+/* 実験は2つのセッションに分かれる。
+   セッション1：全刺激をランダム順で提示し、Q1〜Q2（自由記述）に回答
+   セッション2：同じ全刺激を新たなランダム順で提示し、Q3〜Q8（評定・並べ替え）に回答 */
+const N_SESSIONS = 2;
+const TOTAL_TRIALS = STIMULI.length * N_SESSIONS;
+let trialOrders = [generateOrder(), generateOrder()]; // [セッション1の順番, セッション2の順番]
+function curOrder(){ return trialOrders[state.part - 1]; }
+let results = [];
+let state = {
+  screen: "agree",   // agree | consent | preload | practice | session_intro | trial_noise | trial | break | end
+  part: 1,             // 現在のセッション（1 または 2）
+  trialIndex: 0,       // セッション内の試行番号（0-26）
+  hasPlayedThisTrial: false,
+  replayCount: 0,
+  trialStartTime: null,
+  rankOrder: null,      // 現在の試行のQ3選択肢の表示順（id配列・試行ごとにランダム）
+  answers: {},           // 現在の試行の回答バッファ
+  attempt: 1,            // 1 = 最初から続けて回答、2以降 = 中断から再開した後の回答
+};
+let currentAudio = null;
+
+let trialToken = 0; // 試行ごとに変わる番号。前の試行の再生結果が次の試行に混ざらないようにする
+function resetTrialBuffer(){
+  trialToken += 1;
+  state.hasPlayedThisTrial = false;
+  state.replayCount = 0;
+  state.playedFiles = []; // この試行で実際に再生されたファイル名（ブラウザが再生している音声から取得）
+  state.trialStartTime = Date.now();
+  state.rankOrder = shuffle(RANK_ITEMS).map(r=>r.id);
+  state.answers = {q1:"", q2:"", q3:null, q4:null, q5:null, q6:null, q7:null, q8:[]};
+}
+
+/* ---------- 音声の事前読み込みと再生 ----------
+   実験開始前にすべての音声ファイルを読み込んで、再生可能か確認しておく。
+   読み込んだ Audio は使い回すので、実験中にファイルを取りに行って失敗することがない。 */
+const AUDIO_CACHE = {};
+function srcOf(file){ return AUDIO_DIR + encodeURIComponent(file); }
+function allAudioFiles(){
+  return [...CALIBRATION_TONES.map(t=>t.file), PINK_NOISE, ...STIMULI.map(s=>s.file)];
+}
+const PRELOAD_TIMEOUT_MS = 20000;
+
+/* 1ファイルを読み込む。結果は "ok" | "error"（ファイルが無い・壊れている等）| "timeout" */
+function preloadOne(file){
+  return new Promise(resolve=>{
+    const a = new Audio();
+    a.preload = "auto";
+    let settled = false;
+    const finish = (result)=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if(result === "ok") AUDIO_CACHE[srcOf(file)] = a;
+      resolve({file, result});
+    };
+    const timer = setTimeout(()=>finish("timeout"), PRELOAD_TIMEOUT_MS);
+    a.addEventListener("canplaythrough", ()=>finish("ok"), {once:true});
+    a.addEventListener("error", ()=>finish("error"), {once:true});
+    a.src = srcOf(file);
+    a.load();
+  });
+}
+
+/* 再生。成功したら onstart、2回試しても再生できなければ onfail を呼ぶ */
+function playAudio(src, opts){
+  opts = opts || {};
+  if(currentAudio){ currentAudio.pause(); currentAudio = null; }
+  const audio = AUDIO_CACHE[src] || new Audio(src);
+  audio.pause();
+  try{ audio.currentTime = 0; }catch(e){}
+  audio.volume = (typeof opts.volume === "number") ? opts.volume : 1.0;
+  audio.onended = ()=>{ if(opts.onended) opts.onended(); };
+  currentAudio = audio;
+  audio.play().then(()=>{
+    if(opts.onstart) opts.onstart(audio);
+  }).catch(err=>{
+    console.warn("再生に失敗したため再試行します", err);
+    audio.load();
+    audio.play().then(()=>{
+      if(opts.onstart) opts.onstart(audio);
+    }).catch(err2=>{
+      console.error("再生に失敗しました", err2);
+      if(opts.onfail) opts.onfail(err2);
+    });
+  });
+  return audio;
+}
+
+/* ---------- 進捗の自動保存と再開 ----------
+   1試行終わるごとに、参加者ID・提示順・回答をブラウザ（localStorage）に保存する。
+   途中でページが閉じても、同じ端末・同じブラウザで開き直せば続きから再開できる。
+   保存できない環境（プライベートブラウズ等）では保存なしでそのまま動く。 */
+const STORAGE_KEY = "pitch_animacy_experiment_progress_v11"; // 刺激セットを変えたら番号を上げる
+function storageGet(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function storageSet(obj){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); return true; }
+  catch(e){ console.warn("進捗を保存できませんでした", e); return false; }
+}
+function storageClear(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+}
+let experimentStarted = false; // 本番の試行が始まったら true
+function saveProgress(extra){
+  const prev = storageGet();
+  storageSet(Object.assign({
+    participantId,
+    orders: trialOrders.map(o=>o.map(s=>s.file)),
+    results,
+    attempt: state.attempt,
+    completed: results.length >= TOTAL_TRIALS,
+    downloaded: false,
+    savedAt: new Date().toISOString(),
+  }, (prev && prev.participantId === participantId && prev.downloaded) ? {downloaded:true} : {}, extra || {}));
+}
+/* 保存データが壊れていないか確認し、2セッション分の提示順を復元する。問題があれば null */
+function restoreOrders(saved){
+  if(!saved || !Array.isArray(saved.orders) || !Array.isArray(saved.results)) return null;
+  if(saved.orders.length !== N_SESSIONS) return null;
+  const orders = [];
+  for(const o of saved.orders){
+    if(!Array.isArray(o) || o.length !== STIMULI.length || new Set(o).size !== STIMULI.length) return null;
+    const objs = o.map(f => STIMULI.find(s=>s.file===f));
+    if(objs.some(x=>!x)) return null;
+    orders.push(objs);
+  }
+  if(saved.results.length > TOTAL_TRIALS) return null;
+  for(let i=0;i<saved.results.length;i++){
+    const part = Math.floor(i / STIMULI.length) + 1;
+    const idx = i % STIMULI.length;
+    const r = saved.results[i];
+    if(r.session !== part || r.file !== saved.orders[part-1][idx]) return null;
+  }
+  return orders;
+}
+/* 完了した試行数から、次に行うセッションと試行番号を求める */
+function positionFromCount(n){
+  return {part: Math.min(Math.floor(n / STIMULI.length) + 1, N_SESSIONS), trialIndex: n >= TOTAL_TRIALS ? STIMULI.length-1 : n % STIMULI.length};
+}
+function progressText(n){
+  const s1 = Math.min(n, STIMULI.length), s2 = Math.max(0, n - STIMULI.length);
+  return `セッション1：${s1} / ${STIMULI.length}、セッション2：${s2} / ${STIMULI.length}`;
+}
+let savedProgress = null; // 起動時に見つかった未完了の進捗
+
+/* ========== 4. 描画 ========== */
+const app = document.getElementById("app");
+
+function render(){
+  app.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+
+  // 導入部の短い画面のみ縦方向中央寄せにする（本番の試行画面は上寄せのまま）
+  const CENTER_SCREENS = ["resume", "start_over", "agree", "consent", "preload", "practice", "session_intro"];
+  document.body.classList.toggle("center-vertical", CENTER_SCREENS.includes(state.screen));
+
+  if(state.screen === "resume") renderResume(wrap);
+  else if(state.screen === "start_over") renderStartOver(wrap);
+  else if(state.screen === "agree") renderAgree(wrap);
+  else if(state.screen === "consent") renderConsent(wrap);
+  else if(state.screen === "preload") renderPreload(wrap);
+  else if(state.screen === "practice") renderPractice(wrap);
+  else if(state.screen === "session_intro") renderSessionIntro(wrap);
+  else if(state.screen === "trial_noise") renderTrialNoise(wrap);
+  else if(state.screen === "trial") renderTrial(wrap);
+  else if(state.screen === "break") renderBreak(wrap);
+  else if(state.screen === "end") renderEnd(wrap);
+
+  app.appendChild(wrap);
+}
+
+/* 未完了の進捗が見つかったときの画面 */
+function renderResume(wrap){
+  const sp = savedProgress;
+  const done = sp.results.length;
+  const when = sp.savedAt ? new Date(sp.savedAt).toLocaleString("ja-JP") : "不明";
+  const canResume = !!restoreOrders(sp);
+  const next = positionFromCount(done);
+  wrap.innerHTML = `
+    <h1>前回の続きから再開できます</h1>
+    <p>このブラウザに、途中で中断された実験の記録が残っています。</p>
+    <div style="background:var(--accent-soft); border-radius:var(--radius); padding:16px 18px; margin:18px 0;">
+      <div>参加者ID：<strong>${escapeHtml(String(sp.participantId))}</strong></div>
+      <div>進み具合：<strong>${progressText(done)}</strong> 試行が完了</div>
+      <div class="sub">最終保存：${escapeHtml(when)}</div>
+    </div>
+    ${canResume
+      ? `<p>ご本人が続きを行う場合は「続きから再開する」を押してください。<br>音量確認のあと、セッション${next.part}の${next.trialIndex+1}試行目から再開します。</p>`
+      : `<p class="warn">記録の一部が読み取れないため、続きから再開できません。途中までのデータを保存してから、最初から始めてください。</p>`}
+    <div class="btn-row" style="justify-content:space-between; flex-wrap:wrap;">
+      <button id="btn-start-over">別の参加者として最初から始める</button>
+      ${canResume ? `<button class="btn-primary" id="btn-resume-exp">続きから再開する</button>` : ""}
+    </div>
+  `;
+  wrap.querySelector("#btn-start-over").onclick = ()=>{ state.screen = "start_over"; render(); };
+  if(canResume){
+    wrap.querySelector("#btn-resume-exp").onclick = ()=>{
+      participantId = sp.participantId;
+      trialOrders = restoreOrders(sp);
+      results = sp.results.slice();
+      state.attempt = (sp.attempt || 1) + 1;
+      const pos = positionFromCount(results.length);
+      state.part = pos.part;
+      state.trialIndex = pos.trialIndex;
+      experimentStarted = true;
+      saveProgress();
+      state.screen = "preload"; // 音声の読み込み → 音量確認 → 続きの試行
+      render();
+    };
+  }
+}
+
+/* 保存されている進捗を消して最初から始める（消す前に途中までのデータを保存できる） */
+function renderStartOver(wrap){
+  const sp = savedProgress;
+  wrap.innerHTML = `
+    <h1>最初から始める前に</h1>
+    <p>前回の記録（参加者ID：${escapeHtml(String(sp.participantId))}、${progressText(sp.results.length)} 試行完了）を削除します。<br>削除すると元に戻せません。必要な場合は、先に途中までのデータをダウンロードしてください。</p>
+    <div class="btn-row" style="justify-content:space-between; flex-wrap:wrap;">
+      <button id="btn-dl-partial">途中までのデータをダウンロード</button>
+      <button class="btn-primary" id="btn-clear" style="background:var(--danger); border-color:var(--danger);">記録を削除して最初から始める</button>
+    </div>
+    <div class="btn-row" style="justify-content:flex-start; margin-top:12px;">
+      <button id="btn-back">戻る</button>
+    </div>
+  `;
+  wrap.querySelector("#btn-dl-partial").onclick = ()=>{
+    downloadCsv(sp.results, `result_${sp.participantId}_partial.csv`);
+  };
+  wrap.querySelector("#btn-clear").onclick = ()=>{
+    if(!confirm("前回の記録を削除して、最初から始めます。よろしいですか？")) return;
+    storageClear();
+    location.reload();
+  };
+  wrap.querySelector("#btn-back").onclick = ()=>{ state.screen = "resume"; render(); };
+}
+
+function renderAgree(wrap){
+  wrap.innerHTML = `
+    <h1>研究参加説明および同意</h1>
+    <p>この研究は、人がさまざまな音を聞いたときにどのような印象を持つかを調べるためのものです。</p>
+    <p>実験では、お持ちの端末とヘッドホンを使って、短い音を聞いていただきます。音を聞くごとに、その音の印象について質問にお答えください。</p>
+    <ul style="list-style:none; padding-left:0; margin:0 0 14px;">
+      <li style="margin-bottom:6px;"><strong>セッション1</strong>　Q1〜Q2：自由記述</li>
+      <li><strong>セッション2</strong>　Q3〜Q7：7段階評定、Q8：5つの選択肢の並べ替え（順位づけ）</li>
+    </ul>
+    <p>正解・不正解はありませんので、感じたままにお答えください。全体の所要時間は約50〜60分です。</p>
+    <p>回答いただいた内容は研究データとして使用します。個人を特定できる情報は集めず、結果は統計的にまとめて学会や論文などで発表します。</p>
+    <p>実験は途中でいつでもやめることができます。中止することによって不利益を受けることは一切ありません。また、音を聞いて疲れや不快感を感じた場合は、無理をせず休憩をとるか、実験を中断してください。</p>
+    <p>今回はご自身の端末を使っていただくため、使用する機器や環境を完全に揃えることができません。できるだけ静かな場所で、ヘッドホンを着用してご参加いただけますようご協力をお願いします。</p>
+    <label class="agree-box" id="agree-box">
+      <input type="checkbox" id="agree-checkbox">
+      <span>上記の内容を理解した上で、自発的に本実験に参加することに同意します。</span>
+    </label>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-agree" disabled>同意して次へ</button>
+    </div>
+  `;
+  const checkbox = wrap.querySelector("#agree-checkbox");
+  const box = wrap.querySelector("#agree-box");
+  const btn = wrap.querySelector("#btn-agree");
+  checkbox.onchange = ()=>{
+    btn.disabled = !checkbox.checked;
+    box.classList.toggle("checked", checkbox.checked);
+  };
+  btn.onclick = ()=>{
+    state.screen = "consent";
+    render();
+  };
+}
+
+function renderConsent(wrap){
+  wrap.innerHTML = `
+    <h1>実験を始める前に</h1>
+    <p class="sub">所要時間：約50〜60分</p>
+    <ol style="padding-left:1.3em; margin:20px 0;">
+      <li style="margin-bottom:12px;"><strong>ヘッドホンの着用</strong> — ヘッドホン（またはイヤホン）を着用し、静かな場所でご参加ください。</li>
+      <li style="margin-bottom:12px;"><strong>音量の調整</strong> — 次のページで音を再生しますので、聞き取りやすい音量に調整してください。実験が始まったら、音量は変えないでください。</li>
+      <li style="margin-bottom:12px;"><strong>音声の再生</strong> — 各試行で再生ボタンを押すと音が流れます。何度でも聞き直して構いません。</li>
+      <li style="margin-bottom:12px;"><strong>質問への回答</strong> — 音を聞いた後、その音について感じたことをお答えください。正解・不正解はありませんので、感じたままにお答えください。</li>
+      <li style="margin-bottom:12px;"><strong>2つのセッション</strong> — セッション1では自由記述、セッション2では評定と並べ替えにお答えいただきます。セッションとセッションの間に休憩を挟みます。</li>
+      <li><strong>結果の送信</strong> — すべて終わったら、結果ファイルをダウンロードして実験者にお送りください。</li>
+    </ol>
+    <p class="sub">参加者ID: ${participantId}（自動採番）</p>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-to-practice">音量確認へ進む</button>
+    </div>
+  `;
+  wrap.querySelector("#btn-to-practice").onclick = ()=>{
+    state.screen = "preload";
+    render();
+  };
+}
+
+/* すべての音声ファイルを読み込み、再生できることを確認する */
+function renderPreload(wrap){
+  const files = allAudioFiles();
+  wrap.innerHTML = `
+    <h2>音声の読み込み</h2>
+    <p>実験で使用する音声を読み込んでいます。しばらくお待ちください。</p>
+    <div class="progress-bar" style="margin-top:22px;"><div id="preload-bar" style="width:0%"></div></div>
+    <p class="sub" id="preload-status">0 / ${files.length}</p>
+    <div id="preload-error"></div>
+  `;
+  const bar = wrap.querySelector("#preload-bar");
+  const status = wrap.querySelector("#preload-status");
+  let done = 0;
+  Promise.all(files.map(f => preloadOne(f).then(r=>{
+    done += 1;
+    bar.style.width = (done/files.length*100) + "%";
+    status.textContent = `${done} / ${files.length}`;
+    return r;
+  }))).then(results=>{
+    const errors = results.filter(r=>r.result==="error");
+    const slow = results.filter(r=>r.result==="timeout");
+    if(state.screen !== "preload") return; // 読み込み中に別の画面へ移っていたら何もしない
+    if(errors.length === 0){
+      // 読み込みに時間がかかっただけのファイルは、再生時に改めて読み込む
+      if(slow.length) console.warn("読み込みが完了しなかったファイル", slow.map(r=>r.file));
+      state.screen = "practice";
+      render();
+      return;
+    }
+    console.error("読み込めなかったファイル", errors.map(r=>r.file));
+    wrap.querySelector("#preload-error").innerHTML = `
+      <p class="warn" style="font-size:.95rem;">音声ファイルの一部（${errors.length}件）を読み込めませんでした。<br>ページを再読み込みしてもう一度お試しください。解決しない場合は、実験者にご連絡ください。</p>
+      <p class="sub" style="font-size:.8rem;">${errors.map(r=>escapeHtml(r.file)).join("<br>")}</p>
+      <div class="btn-row"><button class="btn-primary" id="btn-reload">再読み込み</button></div>
+    `;
+    wrap.querySelector("#btn-reload").onclick = ()=> location.reload();
+  });
+}
+
+function renderPractice(wrap){
+  wrap.innerHTML = `
+    <h2>音量確認</h2>
+    ${state.attempt > 1 ? `<p style="background:var(--accent-soft); border-radius:8px; padding:10px 14px;">中断前と同じ機器を使い、前回と同じ音量になっているか確認してください。<br>確認後、セッション${state.part}の${state.trialIndex+1}試行目から再開します。</p>` : ""}
+    <p>実験を始める前に、ヘッドホンの音量を調整してください。<br>下の3つの音をそれぞれ再生し、すべての音が無理なく聞こえ、音量が大きすぎたり小さすぎたりしないことを確認してください。<br>音量を調整した後は、実験が終了するまで変更しないでください。</p>
+    <div class="cal-grid">
+      ${CALIBRATION_TONES.map((t,i)=>`
+        <div class="cal-card" data-cal-card="${i}">
+          <button class="cal-play-btn" data-cal-idx="${i}" aria-label="再生">▶</button>
+          <div class="cal-label">${t.label}</div>
+          <div class="cal-status" data-cal-status="${i}"></div>
+          <label class="cal-check cal-check-disabled" data-cal-check="${i}">
+            <input type="checkbox" data-cal-checkbox="${i}" disabled>
+            <span>確認済み</span>
+          </label>
+        </div>
+      `).join("")}
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-to-trial" disabled>本番を開始する</button>
+    </div>
+  `;
+  const confirmedSet = new Set();
+  const toTrialBtn = wrap.querySelector("#btn-to-trial");
+  const playButtons = [...wrap.querySelectorAll("[data-cal-idx]")];
+  const checkboxes = [...wrap.querySelectorAll("[data-cal-checkbox]")];
+
+  function statusEl(i){ return wrap.querySelector(`[data-cal-status="${i}"]`); }
+  function cardEl(i){ return wrap.querySelector(`[data-cal-card="${i}"]`); }
+
+  playButtons.forEach(btn=>{
+    const idx = parseInt(btn.dataset.calIdx, 10);
+    btn.onclick = ()=>{
+      playAudio(srcOf(CALIBRATION_TONES[idx].file), {
+        onfail: ()=>{ statusEl(idx).textContent = "再生できませんでした。もう一度押してください。"; }
+      });
+      statusEl(idx).textContent = "再生中…";
+      cardEl(idx).classList.add("is-played");
+      const cb = checkboxes.find(c => parseInt(c.dataset.calCheckbox,10) === idx);
+      cb.disabled = false;
+      cb.closest(".cal-check").classList.remove("cal-check-disabled");
+      // 1秒の音源が鳴り終わる頃にステータス表示を消す
+      setTimeout(()=>{ statusEl(idx).textContent = ""; }, 1100);
+    };
+  });
+
+  checkboxes.forEach(cb=>{
+    const idx = parseInt(cb.dataset.calCheckbox, 10);
+    const label = cb.closest(".cal-check");
+    cb.addEventListener("change", ()=>{
+      if(cb.checked){
+        confirmedSet.add(idx);
+        label.classList.add("checked");
+      } else {
+        confirmedSet.delete(idx);
+        label.classList.remove("checked");
+      }
+      toTrialBtn.disabled = confirmedSet.size !== CALIBRATION_TONES.length;
+    });
+  });
+
+  toTrialBtn.onclick = ()=>{
+    experimentStarted = true;
+    saveProgress(); // 提示順をこの時点で保存しておく
+    if(currentAudio){ currentAudio.pause(); currentAudio = null; }
+    resetTrialBuffer();
+    // セッション2の最初から始まる場合（再開時）は、セッション2の説明画面を先に出す
+    state.screen = (state.part === 2 && state.trialIndex === 0) ? "session_intro" : "trial_noise";
+    render();
+  };
+}
+
+/* セッション1が終わった後（セッション2の開始前）の画面 */
+function renderSessionIntro(wrap){
+  wrap.innerHTML = `
+    <h1>セッション1が終わりました</h1>
+    <p>ここで少し休憩をとってください。準備ができたら、下のボタンからセッション2を始めてください。</p>
+    <div style="background:var(--accent-soft); border-radius:var(--radius); padding:16px 18px; margin:18px 0;">
+      <p style="margin:0 0 6px;"><strong>セッション2について</strong></p>
+      <p style="margin:0 0 10px;">セッション2では、あなたは未知の場所を訪れた調査員です。<br>そこでは、何が出しているのかわからない音がいくつも聞こえてきます。<br>これから流れる音について、どのようなものが音を出しているのかを自由に想像しながら、音から受けた印象をもとに、以下の質問にお答えください。<br>音を出しているものがはっきりと思い浮かばなくても構いません。</p>
+      <ul style="margin:0; padding-left:1.2em;">
+        <li>Q3〜Q7：7段階評定</li>
+        <li>Q8：5つの選択肢の並べ替え（順位づけ）</li>
+      </ul>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-start-s2">セッション2を始める</button>
+    </div>
+  `;
+  wrap.querySelector("#btn-start-s2").onclick = ()=>{
+    resetTrialBuffer();
+    state.screen = "trial_noise";
+    render();
+  };
+}
+
+function renderTrialNoise(wrap){
+  wrap.innerHTML = `
+    <div class="progress">
+      <span>セッション${state.part}　試行 ${state.trialIndex+1} / ${STIMULI.length}</span>
+      <span>音声を読み込み中…</span>
+    </div>
+    <div class="progress-bar"><div style="width:${(state.trialIndex)/STIMULI.length*100}%"></div></div>
+    <div class="noise-screen">
+      <div class="dot-pulse"></div>
+      <div>音声を読み込んでいます…</div>
+    </div>
+  `;
+  // ノイズが終わったら試行画面へ。万一ノイズが再生できなくても止まらないよう、
+  // 再生失敗時や一定時間が経っても終わらない場合も先へ進む。
+  let moved = false;
+  const myToken = trialToken;
+  const goTrial = ()=>{
+    if(moved) return;
+    // 古いノイズ画面のタイマーが、別の画面に移った後で動かないようにする
+    if(state.screen !== "trial_noise" || myToken !== trialToken){ moved = true; clearTimeout(safety); return; }
+    moved = true;
+    clearTimeout(safety);
+    state.screen = "trial";
+    render();
+  };
+  const safety = setTimeout(goTrial, 4000);
+  playAudio(srcOf(PINK_NOISE), {volume: NOISE_VOLUME, onended: goTrial, onfail: goTrial});
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* 音声再生＋そのセッションの質問を1ページにまとめて表示する
+   （もう一方のセッションの質問は hidden で非表示にし、回答の対象外にする） */
+function renderTrial(wrap){
+  const item = curOrder()[state.trialIndex];
+  const isLast = state.part === N_SESSIONS && state.trialIndex === STIMULI.length-1;
+  const showFree = state.part === 1;    // セッション1：Q1〜Q2
+  const showRating = state.part === 2;  // セッション2：Q3〜Q8
+  const items = state.rankOrder.map(id => RANK_ITEMS.find(r=>r.id===id));
+
+  wrap.innerHTML = `
+    <div class="progress">
+      <span>セッション${state.part}　試行 ${state.trialIndex+1} / ${STIMULI.length}</span>
+      <span>音声を再生し、すべての質問に回答してください</span>
+    </div>
+    <div class="progress-bar"><div style="width:${(state.trialIndex)/STIMULI.length*100}%"></div></div>
+
+    <div class="play-zone">
+      <button class="play-btn" id="btn-play" aria-label="再生">▶</button>
+      <div class="play-hint">ボタンを押すと音が流れます。</div>
+      <div class="warn" id="warn-play"></div>
+    </div>
+
+    <div class="q-block" ${showFree ? "" : "hidden"}>
+      <h2>Q1. この音から、何かを連想しましたか。<br>単語でも短い文でも構いません。思い浮かんだことは、すべて書いてください。<span class="req-mark">*</span></h2>
+      <textarea id="q1" placeholder="自由にご記入ください">${escapeHtml(state.answers.q1||"")}</textarea>
+      <div class="warn" id="warn-q1"></div>
+    </div>
+
+    <div class="q-block" ${showFree ? "" : "hidden"}>
+      <h2>Q2. この音が、何かの動きや変化を表しているように感じましたか。<br>感じた場合は、どのような動きだと思ったか書いてください。<span class="req-mark">*</span></h2>
+      <p class="sub">感じなかった場合は「感じなかった」とご記入ください。</p>
+      <textarea id="q2" placeholder="自由にご記入ください">${escapeHtml(state.answers.q2||"")}</textarea>
+      <div class="warn" id="warn-q2"></div>
+    </div>
+
+
+    ${LIKERT_QUESTIONS.map((q,qi)=>`
+      <div class="q-block" ${showRating ? "" : "hidden"}>
+        <h2>Q${qi+3}. ${q.text}<span class="req-mark">*</span></h2>
+        <div class="likert">
+          ${[1,2,3,4,5,6,7].map(v=>`
+            <label class="likert-col">
+              <input type="radio" name="${q.key}" value="${v}" ${state.answers[q.key]===v?"checked":""}>
+              <span class="likert-num">${v}</span>
+              <span class="likert-text"><span class="lk">${LIKERT_LABELS[v-1][0]}</span><span class="lk">${LIKERT_LABELS[v-1][1]}</span></span>
+            </label>
+          `).join("")}
+        </div>
+        <div class="warn" id="warn-${q.key}"></div>
+      </div>
+    `).join("")}
+
+    <div class="q-block" ${showRating ? "" : "hidden"}>
+      <h2>Q${RANK_DISPLAY_NO}. 以下の5つを、この音を出しているものとして近いと思う順に並べ替えてください。<span class="req-mark">*</span></h2>
+      <p class="sub">下の選択肢を、近いと思う順にクリックしてください。クリックした順に1位〜5位として並びます。<br>順位はドラッグまたは ▲▼ ボタンで入れ替えられ、✕ で選択を取り消せます。</p>
+      <div class="rank-label">選択肢</div>
+      <div class="rank-pool" id="rank-pool">
+        ${items.map(it=>`
+          <button type="button" class="pool-item" data-id="${it.id}">${rankLabelHtml(it.text)}</button>
+        `).join("")}
+      </div>
+      <div class="rank-label">あなたの順位（<span id="rank-count">0</span> / ${RANK_PICK}）</div>
+      <ul class="rank-list" id="rank-list"></ul>
+      <div class="warn" id="warn-rank"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary is-locked" id="btn-submit">${isLast ? "実験を終了する" : "次へ"}</button>
+    </div>
+  `;
+
+  const submitBtn = wrap.querySelector("#btn-submit");
+
+  /* すべての必須項目が揃っているかどうかを判定し、ボタンの見た目を切り替える
+     （クリック自体は常に受け付け、未回答の項目があればクリック時に案内する） */
+  function updateSubmitState(){
+    const q1ok = !showFree || wrap.querySelector("#q1").value.trim().length > 0;
+    const q2ok = !showFree || wrap.querySelector("#q2").value.trim().length > 0;
+    const likertOk = !showRating || LIKERT_QUESTIONS.every(q => !!wrap.querySelector(`input[name="${q.key}"]:checked`));
+    const rankOk = !showRating || selected.length === RANK_PICK;
+    const ok = state.hasPlayedThisTrial && q1ok && q2ok && rankOk && likertOk;
+    submitBtn.classList.toggle("is-locked", !ok);
+    if(state.hasPlayedThisTrial) wrap.querySelector("#warn-play").textContent = "";
+    if(q1ok) wrap.querySelector("#warn-q1").textContent = "";
+    if(q2ok) wrap.querySelector("#warn-q2").textContent = "";
+    if(rankOk) wrap.querySelector("#warn-rank").textContent = "";
+    LIKERT_QUESTIONS.forEach(q=>{
+      if(wrap.querySelector(`input[name="${q.key}"]:checked`)) wrap.querySelector(`#warn-${q.key}`).textContent = "";
+    });
+    return ok;
+  }
+
+  /* 再生ボタン */
+  wrap.querySelector("#btn-play").onclick = ()=>{
+    // 実際に再生が始まったときだけ「再生済み」として数える
+    const myToken = trialToken;
+    const stillHere = ()=> myToken === trialToken && state.screen === "trial";
+    playAudio(srcOf(item.file), {
+      onstart: (audio)=>{
+        if(!stillHere()) return; // 再生が始まる前に次の試行へ進んでいた場合は数えない
+        // ブラウザが実際に再生している音声ファイルのURLから、ファイル名を取り出して記録する
+        const url = audio.currentSrc || audio.src || "";
+        let name = url.split("/").pop().split("?")[0];
+        try{ name = decodeURIComponent(name); }catch(e){}
+        if(!state.playedFiles.includes(name)) state.playedFiles.push(name);
+        state.replayCount += 1;
+        state.hasPlayedThisTrial = true;
+        updateSubmitState();
+      },
+      onfail: ()=>{
+        if(!stillHere()) return;
+        wrap.querySelector("#warn-play").textContent = "再生できませんでした。もう一度ボタンを押してください。";
+      }
+    });
+  };
+
+  wrap.querySelector("#q1").addEventListener("input", updateSubmitState);
+  wrap.querySelector("#q2").addEventListener("input", updateSubmitState);
+  LIKERT_QUESTIONS.forEach(q=>{
+    wrap.querySelectorAll(`input[name="${q.key}"]`).forEach(r=>{
+      r.addEventListener("change", updateSubmitState);
+    });
+  });
+
+  /* Q8: 5つの選択肢すべてを順位づけする
+     （クリックで選択 → ドラッグ&ドロップ または ▲▼ で並べ替え、✕ で取り消し） */
+  const list = wrap.querySelector("#rank-list");
+  const pool = wrap.querySelector("#rank-pool");
+  let selected = state.answers.q8.slice(); // 選択済みid（1位から順）
+  let dragEl = null;
+
+  function renderRankList(){
+    list.innerHTML = selected.map((id,i)=>{
+      const it = RANK_ITEMS.find(r=>r.id===id);
+      return `
+        <li draggable="true" data-id="${id}">
+          <span class="rank-num">${i+1}</span>
+          <span class="handle">⠿</span>
+          <span class="rank-text">${rankLabelHtml(it.text)}</span>
+          <span class="rank-ctrl">
+            <button type="button" data-act="up" aria-label="順位を上げる" ${i===0?"disabled":""}>▲</button>
+            <button type="button" data-act="down" aria-label="順位を下げる" ${i===selected.length-1?"disabled":""}>▼</button>
+            <button type="button" data-act="remove" aria-label="選択を取り消す">✕</button>
+          </span>
+        </li>`;
+    }).join("") + (selected.length < RANK_PICK
+      ? `<li class="rank-empty">あと ${RANK_PICK - selected.length} つ選んでください</li>` : "");
+    pool.querySelectorAll(".pool-item").forEach(b=>{
+      const isSel = selected.includes(b.dataset.id);
+      b.classList.toggle("is-selected", isSel);
+      b.disabled = isSel || selected.length >= RANK_PICK;
+    });
+    wrap.querySelector("#rank-count").textContent = selected.length;
+    bindDrag();
+  }
+  function syncFromDom(){
+    selected = [...list.querySelectorAll("li[data-id]")].map(li=>li.dataset.id);
+  }
+  function bindDrag(){
+    list.querySelectorAll("li[data-id]").forEach(li=>{
+      li.addEventListener("dragstart", ()=>{ dragEl = li; li.classList.add("dragging"); });
+      li.addEventListener("dragend", ()=>{
+        li.classList.remove("dragging");
+        syncFromDom();
+        renderRankList();
+        updateSubmitState();
+      });
+      li.addEventListener("dragover", (e)=>{
+        e.preventDefault();
+        if(!dragEl) return;
+        const after = getDragAfterElement(list, e.clientY);
+        if(after==null){
+          const empty = list.querySelector(".rank-empty");
+          if(empty) list.insertBefore(dragEl, empty); else list.appendChild(dragEl);
+        } else list.insertBefore(dragEl, after);
+      });
+    });
+  }
+  pool.addEventListener("click", (e)=>{
+    const b = e.target.closest(".pool-item");
+    if(!b || b.disabled) return;
+    if(selected.length >= RANK_PICK || selected.includes(b.dataset.id)) return;
+    selected.push(b.dataset.id);
+    renderRankList();
+    updateSubmitState();
+  });
+  list.addEventListener("click", (e)=>{
+    const b = e.target.closest("button[data-act]");
+    if(!b) return;
+    const id = b.closest("li").dataset.id;
+    const i = selected.indexOf(id);
+    if(b.dataset.act === "up" && i > 0){ [selected[i-1], selected[i]] = [selected[i], selected[i-1]]; }
+    else if(b.dataset.act === "down" && i < selected.length-1){ [selected[i+1], selected[i]] = [selected[i], selected[i+1]]; }
+    else if(b.dataset.act === "remove"){ selected.splice(i,1); }
+    renderRankList();
+    updateSubmitState();
+  });
+  function getDragAfterElement(container, y){
+    const els = [...container.querySelectorAll("li[data-id]:not(.dragging)")];
+    return els.reduce((closest, child)=>{
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset < 0 && offset > closest.offset){
+        return {offset, element: child};
+      } else { return closest; }
+    }, {offset: -Infinity}).element;
+  }
+  renderRankList();
+
+  /* 送信: 未回答の項目があればクリック時に案内メッセージを出し、その場所へスクロールする */
+  wrap.querySelector("#btn-submit").onclick = ()=>{
+    const ok = updateSubmitState();
+    if(!ok){
+      let firstInvalidEl = null;
+      const flag = (cond, selector, msg, focusEl)=>{
+        if(!cond){
+          wrap.querySelector(selector).textContent = msg;
+          if(!firstInvalidEl) firstInvalidEl = focusEl;
+        }
+      };
+      flag(state.hasPlayedThisTrial, "#warn-play", "音を聞いてから回答してください。", wrap.querySelector("#btn-play"));
+      if(showFree) flag(wrap.querySelector("#q1").value.trim().length>0, "#warn-q1", "こちらの質問にお答えください。", wrap.querySelector("#q1"));
+      if(showFree) flag(wrap.querySelector("#q2").value.trim().length>0, "#warn-q2", "こちらの質問にお答えください。", wrap.querySelector("#q2"));
+      if(showRating) LIKERT_QUESTIONS.forEach(q=>{
+        flag(!!wrap.querySelector(`input[name="${q.key}"]:checked`), `#warn-${q.key}`, "いずれかを選んでください。", wrap.querySelector(`input[name="${q.key}"]`));
+      });
+      if(showRating) flag(selected.length === RANK_PICK, "#warn-rank", `5つすべてを順位づけしてください。`, pool);
+      if(firstInvalidEl){
+        firstInvalidEl.scrollIntoView({behavior:"smooth", block:"center"});
+      }
+      return;
+    }
+
+    if(showFree){
+      state.answers.q1 = wrap.querySelector("#q1").value.trim();
+      state.answers.q2 = wrap.querySelector("#q2").value.trim();
+    }
+    if(showRating){
+      state.answers.q8 = selected.slice();
+      LIKERT_QUESTIONS.forEach(q=>{
+        const checked = wrap.querySelector(`input[name="${q.key}"]:checked`);
+        state.answers[q.key] = checked ? parseInt(checked.value, 10) : null;
+      });
+    }
+
+    finishTrial();
+  };
+}
+
+function rankColumns(orderArray){
+  // orderArray: 順位づけされたid配列（1番目=最も近いと感じたもの）。選ばれなかった項目は空欄
+  const out = {};
+  RANK_ITEMS.forEach(item=>{
+    const pos = orderArray.indexOf(item.id);
+    out["rank_" + item.id] = pos === -1 ? null : pos + 1; // 1〜5位（選択なしは空欄）
+  });
+  return out;
+}
+
+function finishTrial(){
+  const item = curOrder()[state.trialIndex];
+  const durationMs = Date.now() - state.trialStartTime;
+  results.push({
+    participant_id: participantId,
+    trial_index: state.trialIndex+1,
+    file: item.file,
+    band: item.band,
+    contour: item.contour,
+    subtype: item.subtype,
+    replay_count: state.replayCount,
+    played_file: (state.playedFiles || []).join("|"),
+    trial_duration_ms: durationMs,
+    q1: state.part === 1 ? state.answers.q1 : "",
+    q2: state.part === 1 ? state.answers.q2 : "",
+    q3: state.answers.q3,
+    q4: state.answers.q4,
+    q5: state.answers.q5,
+    q6: state.answers.q6,
+    q7: state.answers.q7,
+    q8_rank_order: state.answers.q8.join(">"),
+    ...rankColumns(state.answers.q8),
+    is_test_skip: false,
+    session: state.part,
+    attempt: state.attempt,
+    answered_at: new Date().toISOString(),
+  });
+  saveProgress();
+  advanceToNext();
+}
+
+/* 次の試行へ。セッションの最後なら次のセッションの説明画面、全部終わったら終了画面へ */
+function advanceToNext(){
+  if(state.trialIndex < STIMULI.length-1){
+    const completedCount = state.trialIndex + 1;
+    state.trialIndex += 1;
+    resetTrialBuffer();
+    state.screen = BREAK_AFTER_TRIALS.includes(completedCount) ? "break" : "trial_noise";
+  } else if(state.part < N_SESSIONS){
+    state.part += 1;
+    state.trialIndex = 0;
+    resetTrialBuffer();
+    state.screen = "session_intro";
+  } else {
+    state.screen = "end";
+  }
+  render();
+}
+
+let breakTimerInterval = null;
+function renderBreak(wrap){
+  const completedCount = state.trialIndex; // 直前まで完了した試行数
+  wrap.innerHTML = `
+    <h1>休憩</h1>
+    <p>ここまでで ${completedCount} / ${STIMULI.length} が終わりました。少し休憩しましょう。</p>
+    <p class="sub">休憩の目安は5分です。準備ができたら、いつでも下のボタンで再開できます。</p>
+    <div id="break-timer" style="text-align:center; font-size:2.4rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--accent); margin:28px 0;">5:00</div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-resume">再開する</button>
+    </div>
+  `;
+  if(breakTimerInterval){ clearInterval(breakTimerInterval); breakTimerInterval = null; }
+  const timerEl = wrap.querySelector("#break-timer");
+  let remaining = 300; // 5分 = 300秒
+  const tick = ()=>{
+    const m = Math.floor(remaining/60);
+    const s = remaining % 60;
+    timerEl.textContent = `${m}:${String(s).padStart(2,"0")}`;
+    if(remaining <= 0){
+      clearInterval(breakTimerInterval);
+      breakTimerInterval = null;
+      return;
+    }
+    remaining -= 1;
+  };
+  tick();
+  breakTimerInterval = setInterval(tick, 1000);
+
+  wrap.querySelector("#btn-resume").onclick = ()=>{
+    if(breakTimerInterval){ clearInterval(breakTimerInterval); breakTimerInterval = null; }
+    state.screen = "trial_noise";
+    render();
+  };
+}
+
+function renderEnd(wrap){
+  wrap.innerHTML = `
+    <h1>お疲れさまでした</h1>
+    <p>すべての試行にお答えいただき、ありがとうございました。</p>
+    <p class="sub">下のボタンから結果ファイル（CSV）をダウンロードし、実験者にお送りください。</p>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-download">結果をダウンロード（CSV）</button>
+    </div>
+    <p class="footer-note">参加者ID: ${participantId}</p>
+  `;
+  wrap.querySelector("#btn-download").onclick = ()=>{
+    downloadCsv(results, `result_${participantId}.csv`);
+    // ダウンロード済みの印を付ける（このページを閉じるまでは何度でもダウンロード可能。
+    // 次にページを開いたときに記録が消え、次の参加者は最初から始められる）
+    saveProgress({downloaded:true});
+  };
+}
+
+/* 結果CSV：音源ごとに1行（27行）にまとめる。
+   内部では「セッション×試行」ごとに記録しており、ダウンロード時にファイル名をキーにして
+   セッション1の行とセッション2の行を結合する（位置ではなくファイル名で結合するので取り違えない）。
+   s1_ / s2_ で始まる列は、それぞれのセッションでの提示順・再生回数などの情報。 */
+const SESSION_META = ["trial_index","attempt","answered_at","played_file","replay_count","trial_duration_ms","is_test_skip"];
+const CSV_HEADERS = [
+  "participant_id","file","band","contour","subtype",
+  ...SESSION_META.map(k=>"s1_"+k),
+  "q1","q2",
+  ...SESSION_META.map(k=>"s2_"+k),
+  "q3","q4","q5","q6","q7","q8_rank_order","rank_living","rank_machine","rank_instrument","rank_object","rank_nature",
+];
+function buildWideRows(rowsData){
+  const byFile = {};
+  const pid = rowsData.length ? rowsData[0].participant_id : participantId;
+  [...STIMULI].sort((a,b)=>a.file.localeCompare(b.file)).forEach(st=>{
+    byFile[st.file] = {participant_id: pid, file: st.file, band: st.band, contour: st.contour, subtype: st.subtype};
+  });
+  rowsData.forEach(r=>{
+    const row = byFile[r.file];
+    if(!row) return;
+    const pre = r.session === 1 ? "s1_" : "s2_";
+    if(row[pre+"trial_index"] !== undefined) console.error("同じセッションで同じ音源が2回記録されています", r.file);
+    SESSION_META.forEach(k=>{ row[pre+k] = r[k]; });
+    if(r.session === 1){
+      row.q1 = r.q1; row.q2 = r.q2;
+    } else {
+      ["q3","q4","q5","q6","q7","q8_rank_order","rank_living","rank_machine","rank_instrument","rank_object","rank_nature"].forEach(k=>{ row[k] = r[k]; });
+    }
+  });
+  return Object.values(byFile);
+}
+function downloadCsv(rowsData, filename){
+  const headers = CSV_HEADERS;
+  const rows = buildWideRows(rowsData).map(r => headers.map(h => csvEscape(r[h])).join(","));
+  const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function csvEscape(val){
+  if(val===null || val===undefined) return "";
+  const s = String(val);
+  if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+/* ========== 5. 隠しショートカット（動作テスト用） ==========
+   Ctrl + Alt + Shift + N を押すと、現在の試行を回答なし（Q1〜Q8は空欄）で記録したうえで
+   次の試行へ進む（Q1〜Q8は空欄で記録）。結果CSVの出力形式や再生の動作確認に使える。
+   （本番でデータを集める前には必ずページを再読み込みしてください。
+    スキップした行には is_test_skip = true が付くので後で見分けられます。） */
+function skipToNextTrial(){
+  if(currentAudio){ currentAudio.pause(); currentAudio = null; }
+
+  if(state.screen === "resume" || state.screen === "start_over") return;
+  if(state.screen === "agree" || state.screen === "consent" || state.screen === "preload" || state.screen === "practice"){
+    const pos = positionFromCount(results.length);
+    state.part = pos.part;
+    state.trialIndex = pos.trialIndex;
+    experimentStarted = true;
+    saveProgress();
+    resetTrialBuffer();
+    state.screen = "trial_noise";
+    render();
+    return;
+  }
+  if(state.screen === "session_intro"){
+    resetTrialBuffer();
+    state.screen = "trial_noise";
+    render();
+    return;
+  }
+  if(state.screen === "end") return;
+
+  const item = curOrder()[state.trialIndex];
+  results.push({
+    participant_id: participantId,
+    trial_index: state.trialIndex+1,
+    file: item.file,
+    band: item.band,
+    contour: item.contour,
+    subtype: item.subtype,
+    replay_count: state.replayCount,
+    played_file: (state.playedFiles || []).join("|"),
+    trial_duration_ms: Date.now() - state.trialStartTime,
+    // スキップした試行は回答なし：Q1〜Q8はすべて空欄で記録する
+    q1: "", q2: "",
+    q8_rank_order: "",
+    ...rankColumns([]),
+    q3: null, q4: null, q5: null, q6: null, q7: null,
+    is_test_skip: true,
+    session: state.part,
+    attempt: state.attempt,
+    answered_at: new Date().toISOString(),
+  });
+  saveProgress();
+  advanceToNext();
+}
+document.addEventListener("keydown", (e)=>{
+  // e.code は物理的なキーの位置を表すため、Option(Alt)キーとの組み合わせで
+  // 特殊文字が入力される場合でも確実に判定できる（Mac対応）。
+  if(e.ctrlKey && e.altKey && e.shiftKey && e.code === "KeyN"){
+    e.preventDefault();
+    skipToNextTrial();
+  }
+});
+
+/* ページを閉じる・再読み込みする前に確認を出す（実験の途中のみ） */
+window.addEventListener("beforeunload", (e)=>{
+  if(experimentStarted && results.length < TOTAL_TRIALS){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+/* 起動時：保存された進捗があるか確認する */
+(function initFromStorage(){
+  const saved = storageGet();
+  if(!saved) return;
+  if(saved.downloaded){
+    // 前の参加者は結果をダウンロード済み -> 記録を消して新しく始める
+    storageClear();
+    return;
+  }
+  if(saved.completed && restoreOrders(saved)){
+    // 全試行が終わっているがダウンロード前に閉じられた -> 終了画面からダウンロードできるようにする
+    participantId = saved.participantId;
+    trialOrders = restoreOrders(saved);
+    results = saved.results.slice();
+    state.attempt = saved.attempt || 1;
+    state.screen = "end";
+    return;
+  }
+  savedProgress = saved;
+  state.screen = "resume";
+})();
+
+render();
+})();
+</script>
+</body>
+</html>
