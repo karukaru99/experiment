@@ -355,6 +355,28 @@
     margin-top:24px;
     border-top:1px solid var(--line);
   }
+  .field-select, .field-text{
+    width:100%;
+    max-width:360px;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    font-family:inherit;
+    font-size:1rem;
+    color:var(--ink);
+  }
+  .field-select{
+    appearance:none;
+    -webkit-appearance:none;
+    padding-right:44px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235b6169' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 16px center;
+    cursor:pointer;
+  }
+  .field-select:focus, .field-text:focus{outline:3px solid var(--focus); outline-offset:1px;}
+  .field-label{display:block; font-weight:700; margin:22px 0 10px;}
   .agree-box{
     display:flex;
     align-items:center;
@@ -644,7 +666,12 @@ function playAudio(src, opts){
    1試行終わるごとに、参加者ID・提示順・回答をブラウザ（localStorage）に保存する。
    途中でページが閉じても、同じ端末・同じブラウザで開き直せば続きから再開できる。
    保存できない環境（プライベートブラウズ等）では保存なしでそのまま動く。 */
-const STORAGE_KEY = "sound_experiment_progress_v12"; // 刺激セットを変えたら番号を上げる
+/* 参加者情報：母語（第一言語）。プルダウンは50音順、「その他」は最後 */
+const NATIVE_LANGUAGES = ["イタリア語","インドネシア語","英語","韓国語","スペイン語","タイ語","中国語","ドイツ語","日本語","フランス語","ベトナム語","ポルトガル語","ロシア語"];
+/* 表示用：その言語自身での名前を併記する（CSVに記録されるのは日本語名のみ） */
+const LANGUAGE_ENDONYMS = {"イタリア語":"Italiano","インドネシア語":"Bahasa Indonesia","英語":"English","韓国語":"한국어","スペイン語":"Español","タイ語":"ไทย","中国語":"中文","ドイツ語":"Deutsch","日本語":"","フランス語":"Français","ベトナム語":"Tiếng Việt","ポルトガル語":"Português","ロシア語":"Русский"};
+let nativeLanguage = ""; // CSVの native_language 列に入る
+const STORAGE_KEY = "sound_experiment_progress_v13"; // 刺激セットを変えたら番号を上げる
 function storageGet(){
   try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
   catch(e){ return null; }
@@ -664,6 +691,7 @@ function saveProgress(extra){
     orders: trialOrders.map(o=>o.map(s=>s.file)),
     results,
     attempt: state.attempt,
+    nativeLanguage,
     completed: results.length >= TOTAL_TRIALS,
     downloaded: false,
     savedAt: new Date().toISOString(),
@@ -708,12 +736,13 @@ function render(){
   wrap.className = "card";
 
   // 導入部の短い画面のみ縦方向中央寄せにする（本番の試行画面は上寄せのまま）
-  const CENTER_SCREENS = ["resume", "start_over", "agree", "consent", "preload", "practice", "session_intro"];
+  const CENTER_SCREENS = ["resume", "start_over", "agree", "profile", "consent", "preload", "practice", "session_intro"];
   document.body.classList.toggle("center-vertical", CENTER_SCREENS.includes(state.screen));
 
   if(state.screen === "resume") renderResume(wrap);
   else if(state.screen === "start_over") renderStartOver(wrap);
   else if(state.screen === "agree") renderAgree(wrap);
+  else if(state.screen === "profile") renderProfile(wrap);
   else if(state.screen === "consent") renderConsent(wrap);
   else if(state.screen === "preload") renderPreload(wrap);
   else if(state.screen === "practice") renderPractice(wrap);
@@ -755,6 +784,7 @@ function renderResume(wrap){
       participantId = sp.participantId;
       trialOrders = restoreOrders(sp);
       results = sp.results.slice();
+      nativeLanguage = sp.nativeLanguage || "";
       state.attempt = (sp.attempt || 1) + 1;
       const pos = positionFromCount(results.length);
       state.part = pos.part;
@@ -821,6 +851,45 @@ function renderAgree(wrap){
     box.classList.toggle("checked", checkbox.checked);
   };
   btn.onclick = ()=>{
+    state.screen = "profile";
+    render();
+  };
+}
+
+/* 参加者情報（母語）の画面：同意のあと、実験の説明の前 */
+function renderProfile(wrap){
+  const isOther = nativeLanguage !== "" && !NATIVE_LANGUAGES.includes(nativeLanguage);
+  wrap.innerHTML = `
+    <h1>参加者について</h1>
+    <label class="field-label" for="native-lang">あなたの母語（第一言語）を教えてください。<span class="req-mark">*</span></label>
+    <select id="native-lang" class="field-select">
+      <option value="">選択してください</option>
+      ${NATIVE_LANGUAGES.map(l=>`<option value="${l}" ${nativeLanguage===l?"selected":""}>${l}${LANGUAGE_ENDONYMS[l] ? `（${LANGUAGE_ENDONYMS[l]}）` : ""}</option>`).join("")}
+      <option value="__other" ${isOther?"selected":""}>その他（Other）</option>
+    </select>
+    <div id="other-wrap" style="margin-top:12px; ${isOther?"":"display:none;"}">
+      <input type="text" id="native-other" class="field-text" placeholder="言語名をご記入ください" value="${isOther?escapeHtml(nativeLanguage):""}">
+    </div>
+    <div class="warn" id="warn-lang"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-profile-next">次へ</button>
+    </div>
+  `;
+  const sel = wrap.querySelector("#native-lang");
+  const otherWrap = wrap.querySelector("#other-wrap");
+  const other = wrap.querySelector("#native-other");
+  const warn = wrap.querySelector("#warn-lang");
+  sel.onchange = ()=>{
+    otherWrap.style.display = sel.value === "__other" ? "" : "none";
+    if(sel.value === "__other") other.focus();
+    warn.textContent = "";
+  };
+  other.oninput = ()=>{ warn.textContent = ""; };
+  wrap.querySelector("#btn-profile-next").onclick = ()=>{
+    let value = sel.value === "__other" ? other.value.trim() : sel.value;
+    if(!sel.value){ warn.textContent = "母語を選んでください。"; sel.focus(); return; }
+    if(!value){ warn.textContent = "言語名をご記入ください。"; other.focus(); return; }
+    nativeLanguage = value;
     state.screen = "consent";
     render();
   };
@@ -1041,13 +1110,14 @@ function renderTrial(wrap){
 
     <div class="q-block" ${showFree ? "" : "hidden"}>
       <h2>Q1. この音から、何かを連想しましたか。<br>単語でも短い文でも構いません。思い浮かんだことは、すべて書いてください。<span class="req-mark">*</span></h2>
+      <p class="sub">日本語でうまく表現できない言葉や文がある場合は、英語や母語で書いても構いません。</p>
       <textarea id="q1" placeholder="自由にご記入ください">${escapeHtml(state.answers.q1||"")}</textarea>
       <div class="warn" id="warn-q1"></div>
     </div>
 
     <div class="q-block" ${showFree ? "" : "hidden"}>
       <h2>Q2. この音が、何かの動きや変化を表しているように感じましたか。<br>感じた場合は、どのような動きだと思ったか書いてください。<span class="req-mark">*</span></h2>
-      <p class="sub">感じなかった場合は「感じなかった」とご記入ください。</p>
+      <p class="sub">感じなかった場合は「感じなかった」とご記入ください。<br>日本語でうまく表現できない言葉や文がある場合は、英語や母語で書いても構いません。</p>
       <textarea id="q2" placeholder="自由にご記入ください">${escapeHtml(state.answers.q2||"")}</textarea>
       <div class="warn" id="warn-q2"></div>
     </div>
@@ -1385,7 +1455,7 @@ function renderEnd(wrap){
    s1_ / s2_ で始まる列は、それぞれのセッションでの提示順・再生回数などの情報。 */
 const SESSION_META = ["trial_index","attempt","answered_at","played_file","replay_count","trial_duration_ms","is_test_skip"];
 const CSV_HEADERS = [
-  "participant_id","file","band","contour","subtype",
+  "participant_id","native_language","file","band","contour","subtype",
   ...SESSION_META.map(k=>"s1_"+k),
   "q1","q2",
   ...SESSION_META.map(k=>"s2_"+k),
@@ -1395,7 +1465,7 @@ function buildWideRows(rowsData){
   const byFile = {};
   const pid = rowsData.length ? rowsData[0].participant_id : participantId;
   [...STIMULI].sort((a,b)=>a.file.localeCompare(b.file)).forEach(st=>{
-    byFile[st.file] = {participant_id: pid, file: st.file, band: st.band, contour: st.contour, subtype: st.subtype};
+    byFile[st.file] = {participant_id: pid, native_language: nativeLanguage, file: st.file, band: st.band, contour: st.contour, subtype: st.subtype};
   });
   rowsData.forEach(r=>{
     const row = byFile[r.file];
@@ -1441,7 +1511,7 @@ function skipToNextTrial(){
   if(currentAudio){ currentAudio.pause(); currentAudio = null; }
 
   if(state.screen === "resume" || state.screen === "start_over") return;
-  if(state.screen === "agree" || state.screen === "consent" || state.screen === "preload" || state.screen === "practice"){
+  if(state.screen === "agree" || state.screen === "profile" || state.screen === "consent" || state.screen === "preload" || state.screen === "practice"){
     const pos = positionFromCount(results.length);
     state.part = pos.part;
     state.trialIndex = pos.trialIndex;
@@ -1515,6 +1585,7 @@ window.addEventListener("beforeunload", (e)=>{
     participantId = saved.participantId;
     trialOrders = restoreOrders(saved);
     results = saved.results.slice();
+    nativeLanguage = saved.nativeLanguage || "";
     state.attempt = saved.attempt || 1;
     state.screen = "end";
     return;
